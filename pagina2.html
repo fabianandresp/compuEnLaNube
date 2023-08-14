@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+  <title>Pokemon API</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1 class="header-title">Conexion API</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">INICIO</a></li>
+        <li><a href="pagina2.html">API POKEMON</a></li>
+        <li><a href="pagina3.html">SUBIR ARCHIVO</a></li>
+        <li><a href="pagina4.html">VER ARCHIVO</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h2>Conexion API</h2>
+    <div class="api-container">
+      <h3>Consulta de la API de Pokémon</h3>
+      <label for="pokemon-input">Nombre del Pokémon:</label>
+      <input type="text" id="pokemon-input" placeholder="Ingrese el nombre del Pokémon">
+      <button onclick="consultarPokemon()">Consultar</button>
+      <div id="pokemon-info"></div>
+      <div id="pokemon-image"></div>
+      <div id="error"></div>
+    </div>
+    <script>
+      function consultarPokemon() {
+        const pokemonNombre = document.getElementById('pokemon-input').value;
+        if (!pokemonNombre) {
+          alert('Ingrese un nombre de Pokémon válido.');
+          return;
+        }
+
+        const apiUrl = `https://pokeapi.co/api/v2/pokemon/${pokemonNombre.toLowerCase()}`;
+        fetch(apiUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('No se encontró el Pokémon.');
+            }
+            return response.json();
+          })
+          .then(data => {
+            const nombrePokemon = data.name;
+            const tipoPokemon = data.types[0].type.name;
+            const imagenUrl = data.sprites.front_default;
+            const alturaPokemon = data.height / 10; // Convertir a metros
+            const pesoPokemon = data.weight / 10; // Convertir a kilogramos
+            const habilidadesPokemon = data.abilities.map(ability => ability.ability.name).join(', ');
+            const movimientosPokemon = data.moves.map(move => move.move.name).slice(0, 5).join(', ');
+
+            mostrarInformacion(nombrePokemon, tipoPokemon, alturaPokemon, pesoPokemon, habilidadesPokemon, movimientosPokemon);
+            mostrarImagen(imagenUrl);
+          })
+          .catch(error => {
+            const pokemonInfoContainer = document.getElementById('pokemon-info');
+            const pokemonImageContainer = document.getElementById('pokemon-image');
+
+            if (error.message === 'No se encontró el Pokémon.') {
+              pokemonInfoContainer.innerHTML = 'Ingrese un nombre de pokemon valido';
+              pokemonImageContainer.innerHTML = '';
+            } else {
+              console.error('Error al obtener datos de la API:', error);
+            }
+          });
+      }
+
+      function mostrarInformacion(nombre, tipo, altura, peso, habilidades, movimientos) {
+        const pokemonInfoContainer = document.getElementById('pokemon-info');
+        pokemonInfoContainer.innerHTML = `
+          <p>Nombre: ${nombre}</p>
+          <p>Tipo: ${tipo}</p>
+          <p>Altura: ${altura} metros</p>
+          <p>Peso: ${peso} kg</p>
+          <p>Habilidades: ${habilidades}</p>
+          <p>Movimientos: ${movimientos}</p>
+        `;
+      }
+
+      function mostrarImagen(imagenUrl) {
+        const imagenPokemon = document.createElement('img');
+        imagenPokemon.src = imagenUrl;
+
+        const pokemonImageContainer = document.getElementById('pokemon-image');
+        pokemonImageContainer.innerHTML = '';
+        pokemonImageContainer.appendChild(imagenPokemon);
+      }
+    </script>
+  </main>
+</body>
+</html>
+

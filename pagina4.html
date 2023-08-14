@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Página 4</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script>
+    // Configura tu proyecto de Firebase
+    const firebaseConfig = {
+    apiKey: "AIzaSyCv2YDejDL8S-nhBVock7-U17uCHkwfX8Y",
+    authDomain: "pokemon-de398.firebaseapp.com",
+    projectId: "pokemon-de398",
+    storageBucket: "pokemon-de398.appspot.com",
+    messagingSenderId: "188399346264",
+    appId: "1:188399346264:web:70ce33e5f18e2a69c5a02d"
+  };
+
+    // Inicializa Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+</head>
+<body>
+  <header>
+    <h1 class="header-title">Nube Firebase</h1>
+    <nav>
+      <ul>
+        <li><a href="index.html">INICIO</a></li>
+        <li><a href="pagina2.html">API POKEMON</a></li>
+        <li><a href="pagina3.html">SUBIR ARCHIVO</a></li>
+        <li><a href="pagina4.html">VER ARCHIVO</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h2>Mostrar Lista de archivos</h2>
+    <div class="auth-container" id="auth-container">
+      <!-- El formulario de inicio de sesión se mostrará aquí si es necesario -->
+    </div>
+    <div class="file-list-container">
+      <h3>Archivos en Firebase Storage</h3>
+      <ul id="file-list"></ul>
+    </div>
+  </main>
+  <script>
+    var fileList = document.getElementById('file-list');
+
+    // Verificar si ya hay un usuario autenticado en localStorage
+    var usuarioAutenticado = localStorage.getItem('usuarioAutenticado');
+    if (usuarioAutenticado === 'true') {
+      console.log('Usuario autenticado');
+      actualizarListaArchivos();
+    } else {
+      // Mostrar el formulario de inicio de sesión si no hay usuario autenticado
+      var authContainer = document.getElementById('auth-container');
+      authContainer.innerHTML = `
+        <form id="login-form">
+          <input type="email" id="email" placeholder="Correo Electrónico" required>
+          <input type="password" id="password" placeholder="Contraseña" required>
+          <button type="submit">Iniciar Sesión</button>
+        </form>
+      `;
+
+      var loginForm = document.getElementById('login-form');
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+          .then(function() {
+            return firebase.auth().signInWithEmailAndPassword(email, password);
+          })
+          .then(function(userCredential) {
+            var user = userCredential.user;
+            console.log('Usuario autenticado:', user);
+            authContainer.innerHTML = ''; // Eliminar el formulario de inicio de sesión
+            localStorage.setItem('usuarioAutenticado', 'true'); // Guardar estado de autenticación
+            actualizarListaArchivos();
+          })
+          .catch(function(error) {
+            console.error('Error de inicio de sesión:', error);
+          });
+      });
+    }
+
+    function actualizarListaArchivos() {
+      fileList.innerHTML = '';
+
+      var user = firebase.auth().currentUser;
+      if (user) {
+        var userStorageRef = firebase.storage().ref().child(user.uid);
+        userStorageRef.listAll()
+          .then(function(res) {
+            res.items.forEach(function(itemRef) {
+              var li = document.createElement('li');
+
+              var link = document.createElement('a');
+              link.href = '#'; // Enlace vacío
+              link.textContent = itemRef.name;
+              link.addEventListener('click', function() {
+                descargarArchivo(itemRef.fullPath); // Llama a la función para descargar el archivo
+              });
+
+              li.appendChild(link);
+              fileList.appendChild(li);
+            });
+          })
+          .catch(function(error) {
+            console.error('Error al listar archivos:', error);
+          });
+      }
+    }
+
+    function descargarArchivo(ruta) {
+      var user = firebase.auth().currentUser;
+      if (user) {
+        var storageRef = firebase.storage().ref();
+        var archivoRef = storageRef.child(ruta);
+
+        archivoRef.getDownloadURL()
+          .then(function(url) {
+            // Crea un enlace de descarga
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = ruta.split('/').pop(); // Establece el nombre de descarga
+
+            // Simula un clic en el enlace para iniciar la descarga
+            link.click();
+          })
+          .catch(function(error) {
+            console.error('Error al obtener URL de descarga:', error);
+          });
+      }
+    }
+
+    // Llamar a la función de actualizar cada 5 segundos
+    setInterval(actualizarListaArchivos, 5000); // 5000 milisegundos = 5 segundos
+  </script>
+</body>
+</html>

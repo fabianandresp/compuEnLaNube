@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Página 3</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script>
+        // Configura tu proyecto de Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyCv2YDejDL8S-nhBVock7-U17uCHkwfX8Y",
+          authDomain: "pokemon-de398.firebaseapp.com",
+          projectId: "pokemon-de398",
+          storageBucket: "pokemon-de398.appspot.com",
+          messagingSenderId: "188399346264",
+          appId: "1:188399346264:web:70ce33e5f18e2a69c5a02d"
+        };
+
+        // Inicializa Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+</head>
+<body>
+    <header>
+        <h1 class="header-title">Nube Firebase</h1>
+        <nav>
+            <ul>
+              <li><a href="index.html">INICIO</a></li>
+              <li><a href="pagina2.html">API POKEMON</a></li>
+              <li><a href="pagina3.html">SUBIR ARCHIVO</a></li>
+              <li><a href="pagina4.html">VER ARCHIVO</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2>Cargar Archivos a Firebase Storage</h2>
+        <div class="auth-container" id="auth-container">
+            <!-- El formulario de inicio de sesión se mostrará aquí si es necesario -->
+        </div>
+        <div class="upload-container">
+            <h3>Subir Archivo a Firebase Storage</h3>
+            <p id="success-message" class="success-message"></p>
+            <input type="file" id="archivo-input">
+            <button id="cargar-button">Cargar Archivo</button>
+            <div id="mensaje"></div>
+        </div>
+    </main>
+    <script>
+        var archivoInput = document.getElementById('archivo-input');
+        var cargarButton = document.getElementById('cargar-button');
+        var mensajeDiv = document.getElementById('mensaje');
+        var successMessage = document.getElementById('success-message');
+
+        // Verificar si ya hay un usuario autenticado
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                console.log('Usuario autenticado:', user);
+                cargarButton.disabled = false;
+                successMessage.textContent = 'Sesión activa. Puedes cargar archivos.';
+            } else {
+                // Mostrar el formulario de inicio de sesión si no hay usuario autenticado
+                var authContainer = document.getElementById('auth-container');
+                authContainer.innerHTML = `
+                    <form id="login-form">
+                        <input type="email" id="email" placeholder="Correo Electrónico" required>
+                        <input type="password" id="password" placeholder="Contraseña" required>
+                        <button type="submit">Iniciar Sesión</button>
+                    </form>
+                `;
+
+                var loginForm = document.getElementById('login-form');
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    var email = document.getElementById('email').value;
+                    var password = document.getElementById('password').value;
+
+                    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                        .then(function() {
+                            return firebase.auth().signInWithEmailAndPassword(email, password);
+                        })
+                        .catch(function(error) {
+                            console.error('Error de inicio de sesión:', error);
+                        });
+                });
+            }
+        });
+
+        cargarButton.addEventListener('click', function() {
+            var archivo = archivoInput.files[0];
+            if (archivo) {
+                var user = firebase.auth().currentUser;
+                if (user) {
+                    var storageRef = firebase.storage().ref();
+                    var archivoRef = storageRef.child(user.uid + '/' + archivo.name);
+                    archivoRef.put(archivo)
+                        .then(function(snapshot) {
+                            mensajeDiv.textContent = 'Archivo cargado exitosamente';
+                            setTimeout(function() {
+                                mensajeDiv.textContent = '';
+                            }, 3000); // Limpiar el mensaje después de 3 segundos
+                        })
+                        .catch(function(error) {
+                            mensajeDiv.textContent = 'Error al cargar el archivo: ' + error.message;
+                        });
+                } else {
+                    mensajeDiv.textContent = 'Usuario no autenticado';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
